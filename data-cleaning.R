@@ -71,3 +71,28 @@ close(con)
 n_user <- n_user[n_user$review_count>10,]
 n_user <- droplevels(n_user)
 write.csv(n_user, "./nevada_files/nevada_user.csv", fileEncoding = "UTF-8")
+
+
+#### Further cleaning -----------------------------------------------------------------------------------
+
+dfb <- read.csv("./nevada_files/nevada_business.csv", fileEncoding = "UTF-8")
+dfb <- as.data.frame(dfb)
+dfb <- dfb[which(grepl("Food", dfb$categories)),]
+
+bid <- unique(dfb$business_id)
+
+dfr <- read.csv("./nevada_files/nevada_review.csv")
+dfr <- dfr[dfr$business_id %in% bid ,]
+uid <- unique(dfr$user_id)
+
+dfu <- read.csv("./nevada_files/nevada_user.csv")
+dfu <- dfu[dfu$user_id %in% uid ,]
+
+dfu <- droplevels(dfu)
+dfu <- dfu[-which(dfu$friends=="None"),]
+
+write.csv(dfu, "users_filtered.csv", fileEncoding = "UTF-8")
+
+
+
+
