@@ -1,4 +1,7 @@
 #### Cleaning businesses data ------------------------------------------------------------------------------------------------------
+
+# All businesses except those that are definitely not restaurants
+
 business <- read.csv("yelp_academic_dataset_business.csv")
 business <- as.data.frame(business)
 df <- business[business$state =="NV",]
@@ -33,6 +36,8 @@ rm(df)
 #### Reading reviews data --------------------------------------------------------------------------------------------------------
 library(dplyr)
 
+# Reading only reviews for businesses from the previous list
+
 con = file("yelp_academic_dataset_review.csv","r")
 i <- 1
 n_rev <- data.frame()
@@ -53,6 +58,8 @@ uid <- unique(n_rev$user_id)
 
 #### Reading User data ---------------------------------------------------------------------------------
 
+# Only those users that have give reviews for the select businesses
+
 con = file("yelp_academic_dataset_user.csv", "r")
 i <- 1
 n_user <- data.frame()
@@ -72,27 +79,82 @@ n_user <- n_user[n_user$review_count>10,]
 n_user <- droplevels(n_user)
 write.csv(n_user, "./nevada_files/nevada_user.csv", fileEncoding = "UTF-8")
 
+#### Reading User data 2---------------------------------------------------------------------------------
+
+# Reading all users who have some friends
+
+con = file("yelp_academic_dataset_user.csv", "r")
+i <- 1
+n_user <- data.frame()
+user <- read.csv(con, nrows=1e4, stringsAsFactors = F, header = T)
+df <- user[-which(user$friends=="None"),]
+n_user <- bind_rows(n_user, df)
+unames <- colnames(n_user)
+while(i){
+  user <- read.csv(con, nrows=1e4, stringsAsFactors = F, header = F, col.names = unames)
+  df <- user[-which(user$friends=="None"),]
+  n_user <- bind_rows(n_user, df)
+  if(nrow(user) != 1e4){break}
+}
+close(con)
+
+n_user <- n_user[n_user$review_count>10,]
+n_user <- droplevels(n_user)
+write.csv(n_user, "./nevada_files/nevada_user_2.csv", fileEncoding = "UTF-8")
 
 #### Further cleaning -----------------------------------------------------------------------------------
 
-dfb <- read.csv("./nevada_files/nevada_business.csv", fileEncoding = "UTF-8")
+dfb <- read.csv("./nevada_files/nevada_business.csv", stringsAsFactors = F, fileEncoding = "UTF-8")
 dfb <- as.data.frame(dfb)
 dfb <- dfb[which(grepl("Food", dfb$categories)),]
-
+dfb <- droplevels(dfb)
 bid <- unique(dfb$business_id)
 
-dfr <- read.csv("./nevada_files/nevada_review.csv")
+dfr <- read.csv("./nevada_files/nevada_review.csv", stringsAsFactors = F, fileEncoding = "UTF-8")
 dfr <- dfr[dfr$business_id %in% bid ,]
 uid <- unique(dfr$user_id)
 
-dfu <- read.csv("./nevada_files/nevada_user.csv")
-dfu <- dfu[dfu$user_id %in% uid ,]
+
+dfu <- read.csv("./nevada_files/nevada_user.csv", fileEncoding = "UTF-8", stringsAsFactors = F)
+dfu <- dfu[dfu$user_id %in% uid,]
+
+# dfu2 <- data.frame()
+# for (i in 1:length(uid)){
+#   dfu2 <- bind_rows(dfu2, dfu[grepl(uid[i], dfu$friends, fixed=TRUE),])
+# }
 
 dfu <- droplevels(dfu)
-dfu <- dfu[-which(dfu$friends=="None"),]
+uid <- unique(dfu$user_id)
+dfr <- dfr[dfr$user_id %in% uid ,]
+#dfu1 <- dfu1[dfu1$friends!="None",]
 
-write.csv(dfu, "users_filtered.csv", fileEncoding = "UTF-8")
+#dfu <- union(dfu1, dfu2)
 
+#write.csv(dfu, "users_filtered.csv", fileEncoding = "UTF-8")
 
+#### Making network ----------------------------------------------------------------------------------------------------------------------
+df <- dfr
+user <- df %>% group_by(user_id) %>% summarise(n=n()) %>% as.data.frame()
+uid <- user$user_id[user$n > 5]
+df <- df[df$user_id %in% uid ,]
+
+review <- vector("list")
+for (i in 1:length(uid)){
+    review[[uid[i]]] <- df$business_id[df$user_id==uid[i]] 
+}
+k <- 1
+edgelist <- data.frame(matrix(ncol=3,nrow=0))
+colnames(edgelist) <- c("user1","user2","strength")
+for (i in 1:length(uid)){
+  print(i)
+  for (j in i:length(uid)){
+    t <- length(intersect(review[[uid[i]]],review[[uid[j]]]))
+    if (t>0){
+      edgelist[k,] <- c(uid[i],uid[j],t)
+      k <- k + 1
+    }
+  }
+}
+write.csv(edgelist,"usernetwork.csv", fileEncoding = "UTF-8")
 
 
