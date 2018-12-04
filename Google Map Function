@@ -1,4 +1,8 @@
 #There are two functions. Dont touch the sizes function. You will need to pass two lists through the create_map function.
+# NOTE: THESE FUNCTIONS ASSUME THAT YOU HAVE LOADED THE nevada_business_cleaned_v2.csv file into pandas as follows:
+df = pd.read_csv("nevada_business_cleaned_v2.csv")
+df.drop(columns=['hours.Monday', 'hours.Tuesday','hours.Wednesday', 'hours.Thursday', 'hours.Friday','hours.Saturday','hours.Sunday'
+         ,'time','BusinessAcceptsBitcoin','CoatCheck','DogsAllowed','city','postal_code','address', 'attributes', 'Restaurant','Food'], inplace = True)
 
 
 #Function to assign size to review_counts. You dont have to touch this. It is used within the create_map fn.
