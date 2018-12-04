@@ -65,3 +65,9 @@ def create_map(a,b):
     p.circle(x="lon", y="lat", size="size", fill_alpha=0.6, fill_color = "color", line_width=1, line_alpha=0, hover_alpha = 0.8, source=source)
     
     return p
+    
+    #To show the map
+    p = create_map(a,b)
+    show(p)
+    
+   
