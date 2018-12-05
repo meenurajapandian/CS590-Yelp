@@ -1,0 +1,73 @@
+#There are two functions. Dont touch the sizes function. You will need to pass two lists through the create_map function.
+# NOTE: THESE FUNCTIONS ASSUME THAT YOU HAVE LOADED THE nevada_business_cleaned_v2.csv file into pandas as follows:
+df = pd.read_csv("nevada_business_cleaned_v2.csv")
+df.drop(columns=['hours.Monday', 'hours.Tuesday','hours.Wednesday', 'hours.Thursday', 'hours.Friday','hours.Saturday','hours.Sunday'
+         ,'time','BusinessAcceptsBitcoin','CoatCheck','DogsAllowed','city','postal_code','address', 'attributes', 'Restaurant','Food'], inplace = True)
+
+
+#Function to assign size to review_counts. You dont have to touch this. It is used within the create_map fn.
+def sizes(review_count):
+    r = review_count
+    sz = 0
+    if (0 <= r < 50):
+        sz = 0
+    elif (50 <= r < 500):
+        sz = 6
+    elif (500 <= r < 2000):
+        sz = 9
+    elif (2000 <= r < 5000):
+        sz = 12
+    elif (5000 <= r):
+        sz = 15
+    return sz
+
+
+#What columns would be needed to create the map? lat, lon, size and color for each of the businesses.
+#size would be the review count discretized into 4 bins
+#color would be coded based on which set the businessID is present in. 
+#if businessID is only present in the common selection between users, it would be colored red. 
+#if the businessID is not common between users, it would be colored blue
+
+def create_map(a,b):
+    businessID_1 = a #ENTER OVERALL LIST OF BUSINESS_IDS 
+    businessID_2 = b #ENTER LIST OF COMMON BUSINESS_IDS
+    #checkin_vals = df['checkin_at_hour']
+    clr = []
+    sz = []
+    latitude = []
+    longitude = []
+    l1 = len(businessID_1)
+    l2 = len(businessID_2)
+    for i in range(0,l1):
+        clr.append("blue")
+        c = 0
+        for x in df['business_id']:
+            if businessID_1[i] == x:
+                sz.append(sizes(df['review_count'][c]))
+                latitude.append(df['latitude'][c])
+                longitude.append(df['longitude'][c])
+            c += 1
+    for i in range(0,l2):
+        c = 0
+        for x in businessID_1:
+            if businessID_2[i] == x:
+                clr[c] = "red" 
+            c += 1
+    
+    output_file("gmap.html")
+
+    map_options = GMapOptions(lat=36.1200, lng=-115.1750, map_type="roadmap", zoom=11)
+
+    p = gmap("AIzaSyBZ66UcTIUAyZBWhrhs8JLTzth9yMorgQU", map_options, title="Vegas", plot_width=800)
+        
+    source = ColumnDataSource(data=dict(lat=latitude ,lon=longitude, size = sz, color = clr))
+
+    p.circle(x="lon", y="lat", size="size", fill_alpha=0.6, fill_color = "color", line_width=1, line_alpha=0, hover_alpha = 0.8, source=source)
+    
+    return p
+    
+    #To show the map
+    p = create_map(a,b)
+    show(p)
+    
+   
