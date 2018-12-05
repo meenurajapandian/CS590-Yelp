@@ -15,7 +15,7 @@ df_user = pd.read_csv('C:/Users/Meenu/PycharmProjects/CS590/CS590-Yelp/userdetai
 
 
 G = nx.from_pandas_edgelist(df, 'user1', 'user2', ['strength','distance'])
-nx.set_node_attributes(G, dict(nx.betweenness_centrality(G, weight='distance'), 'bwcentral'))
+nx.set_node_attributes(G, nx.betweenness_centrality(G, weight='distance'), 'bwcentral')
 #nx.set_node_attributes(G, dict(nx.betweenness_centrality(G, weight='distance', 'bwcentral')))
 nx.set_node_attributes(G, df_user.set_index('user_id').to_dict('index'))
 nx.set_node_attributes(G, dict(G.degree(weight='strength')), 'WDegree')
@@ -78,14 +78,30 @@ graph.edge_renderer.selection_glyph = MultiLine(line_color='black', line_width=0
 graph_layout = dict(zip(nodep, zip(nodex, nodey)))
 graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
 
+
+def bezier(start, end, control, steps):
+    return[(1-s)**2*start + s*(1-s)*s*control + s**2*end for s in steps]
+
+
+xs, ys = [], []
+sx, sy = graph_layout[0]
+steps = [i/100 for i in range(100)]
+for node_index in G.nodes():
+    ex, ey = graph_layout[node_index]
+    xs.append(bezier(sx, ex, 0, steps))
+    ys.append(bezier(sy, ey, 0, steps))
+
+graph.edge_renderer.data_source.data['xs'] = xs
+graph.edge_renderer.data_source.data['ys'] = ys
+
 #Hover Properties
 node_hover_tool = HoverTool(tooltips=[("Name", "@name"),
                                       ("Yelper Since", "@yelping_since{}"),
                                       ("Total Reviews", "@review_count"),
                                       ("Average stars", "@average_stars"),
-                                      ("Friends", "@friends"),
+                                      ("Friends", "@friend"),
                                       ("Fans", "@fans"),
-                                      ("Compliment Ranking", "@comp_tile")])
+                                      ("Compliment Ranking", "@comp_rank")])
 plot.add_tools(node_hover_tool)
 
 graph.selection_policy = NodesAndLinkedEdges()

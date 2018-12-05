@@ -110,6 +110,12 @@ dfb <- dfb[which(grepl("Food", dfb$categories)),]
 dfb <- droplevels(dfb)
 bid <- unique(dfb$business_id)
 
+dfb1 <- read.csv("nevada_business_cleaned.csv", stringsAsFactors = F, fileEncoding = "UTF-8")
+bid <- unique(dfb1$business_id)
+
+dfb2 <- read.csv("nevada_business_cleaned_v2.csv", stringsAsFactors = F, fileEncoding = "UTF-8")
+bid <- unique(dfb2$business_id)
+
 dfr <- read.csv("./nevada_files/nevada_review.csv", stringsAsFactors = F, fileEncoding = "UTF-8")
 dfr <- dfr[dfr$business_id %in% bid ,]
 uid <- unique(dfr$user_id)
@@ -123,6 +129,9 @@ dfu <- dfu[dfu$user_id %in% uid,]
 #   dfu2 <- bind_rows(dfu2, dfu[grepl(uid[i], dfu$friends, fixed=TRUE),])
 # }
 
+dfu <- dfu[dfu$review_count < 6000 ,]
+dfu <- dfu[dfu$review_count > 105 ,]
+
 dfu <- droplevels(dfu)
 uid <- unique(dfu$user_id)
 dfr <- dfr[dfr$user_id %in% uid ,]
@@ -135,7 +144,7 @@ dfr <- dfr[dfr$user_id %in% uid ,]
 #### Making network ----------------------------------------------------------------------------------------------------------------------
 df <- dfr
 user <- df %>% group_by(user_id) %>% summarise(n=n()) %>% as.data.frame()
-uid <- user$user_id[user$n > 5]
+uid <- user$user_id[user$n > 10]
 df <- df[df$user_id %in% uid ,]
 
 review <- vector("list")
@@ -157,4 +166,17 @@ for (i in 1:length(uid)){
 }
 write.csv(edgelist,"usernetwork.csv", fileEncoding = "UTF-8")
 
+dfu <- dfu[dfu$user_id %in% uid,]
+dfu$comp_tile <- dfu$compliment_cool + dfu$compliment_cute + dfu$compliment_funny + dfu$compliment_hot + dfu$compliment_list +
+  dfu$compliment_more + dfu$compliment_note + dfu$compliment_photos + dfu$compliment_plain + dfu$compliment_profile + dfu$compliment_writer
+
+dfu$friend <- lengths(regmatches(dfu$friends, gregexpr(",", dfu$friends)))
+
+for (i in 1:length(uid)){
+  dfu$businesses[dfu$user_id == uid[i]] <- paste(review[[df$user_id[i]]], collapse=", ")
+}
+
+dfu <- dfu %>% mutate(comp_rank = percent_rank(comp_tile))
+dfu.d <- dfu[, c("user_id", "name", "yelping_since", "review_count", "friend", "comp_rank", "businesses")]
+write.csv(dfu.d, "userdetails.csv", fileEncoding = "UTF-8")
 
