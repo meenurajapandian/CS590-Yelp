@@ -52,7 +52,7 @@ def create_figure():
     graph = GraphRenderer()
     graph.node_renderer.data_source.data = nodes_df(G, col)
     graph.edge_renderer.data_source.data = edges_df(G)
-    graph.node_renderer.glyph = Circle(size='size', fill_color='Col', line_color=None, fill_alpha=1)
+    graph.node_renderer.glyph = Circle(size='size', fill_color='Col', line_color="black", line_alpha = 0.1, fill_alpha=1)
     graph.edge_renderer.glyph = MultiLine(line_alpha='alpha', line_width=0.1, line_color="#A0DF3F")
     graph_layout = dict(nx.get_node_attributes(G, lay))
     graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
@@ -65,7 +65,7 @@ def create_figure():
 
 
     # Adding graph to plot
-    plot = figure(title="Graph Layout Demonstration", x_range=(-6.5, 6.5), y_range=(-6.5, 6.5))
+    plot = figure(title="Yelp Users Layout", x_range=(-6.5, 6.5), y_range=(-6.5, 6.5))
     plot.outline_line_alpha = 0
     plot.xgrid.grid_line_color = None
     plot.ygrid.grid_line_color = None
