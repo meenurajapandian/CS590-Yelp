@@ -129,7 +129,7 @@ dfu <- dfu[dfu$user_id %in% uid,]
 #   dfu2 <- bind_rows(dfu2, dfu[grepl(uid[i], dfu$friends, fixed=TRUE),])
 # }
 
-dfu <- dfu[dfu$review_count < 6000 ,]
+dfu <- dfu[dfu$review_count < 1000 ,]
 dfu <- dfu[dfu$review_count > 105 ,]
 
 dfu <- droplevels(dfu)
@@ -144,7 +144,10 @@ dfr <- dfr[dfr$user_id %in% uid ,]
 #### Making network ----------------------------------------------------------------------------------------------------------------------
 df <- dfr
 user <- df %>% group_by(user_id) %>% summarise(n=n()) %>% as.data.frame()
-uid <- user$user_id[user$n > 10]
+uid <- user$user_id[user$n > 50]
+user <- user[user$user_id %in% uid,]
+user <- droplevels(user)
+uid <- user$user_id[user$n < 75]
 df <- df[df$user_id %in% uid ,]
 
 review <- vector("list")
@@ -164,7 +167,7 @@ for (i in 1:length(uid)){
     }
   }
 }
-write.csv(edgelist,"usernetwork.csv", fileEncoding = "UTF-8")
+write.csv(edgelist,"usernetwork1.csv", fileEncoding = "UTF-8")
 
 dfu <- dfu[dfu$user_id %in% uid,]
 dfu$comp_tile <- dfu$compliment_cool + dfu$compliment_cute + dfu$compliment_funny + dfu$compliment_hot + dfu$compliment_list +
@@ -178,5 +181,8 @@ for (i in 1:length(uid)){
 
 dfu <- dfu %>% mutate(comp_rank = percent_rank(comp_tile))
 dfu.d <- dfu[, c("user_id", "name", "yelping_since", "review_count", "friend", "comp_rank", "businesses")]
-write.csv(dfu.d, "userdetails.csv", fileEncoding = "UTF-8")
+names(dfu.d)[names(dfu.d) == 'yelping_since'] <- 'yelpingsince'
+names(dfu.d)[names(dfu.d) == 'review_count'] <- 'reviewcount'
+names(dfu.d)[names(dfu.d) == 'comp_rank'] <- 'comprank'
+write.csv(dfu.d, "userdetails1.csv", fileEncoding = "UTF-8")
 
