@@ -6,9 +6,10 @@ from bokeh.models.widgets import RadioGroup, Paragraph
 from bokeh.models.graphs import NodesAndLinkedEdges, EdgesAndLinkedNodes
 
 
+# Reading the user network
 G = nx.read_gml("user.gml")
 
-
+# Creating the ColumnDataSource for nodes of the graph
 def nodes_df(gr, col):
     node_data = dict(index=[], Col=[], size=[])
     for u in gr.nodes():
@@ -17,7 +18,7 @@ def nodes_df(gr, col):
         node_data['size'].append(gr.node[u]['size'])
     return node_data
 
-
+# Creating the ColumnDataSource for edges of the graph
 def edges_df(gr):
     edges_data = dict(start=[], end=[], alpha=[])
     maxw = 30
@@ -28,7 +29,9 @@ def edges_df(gr):
     return edges_data
 
 
-def create_figure():
+# Creating the network visualization
+def create_graph():
+    #Find the layout and color choice
     if radio_layout.active == 0:
         lay = 'WDegreepos'
     elif radio_layout.active == 1:
@@ -79,7 +82,7 @@ def create_figure():
 
 def update(attr, old, new):
     print(attr, old, new)
-    layout.children[0] = create_figure()
+    layout.children[0] = create_graph()
 
 
 #Radio buttons for changing layouts and colors
@@ -95,6 +98,6 @@ t1 = Paragraph(text="""Layout""")
 t2 = Paragraph(text="""Color Scheme""")
 
 widget = widgetbox([t1, radio_layout, t2, radio_color], width=300)
-layout = row(create_figure(), widget)
+layout = row(create_graph(), widget)
 
 curdoc().add_root(layout)

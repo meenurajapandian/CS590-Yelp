@@ -410,10 +410,6 @@ def create_chart():
     b.vbar(x=dodge('hour', +0.225, range=b.x_range), top='Selection', width=0.35, source=source, color="red",
            legend=value("Selection"))
 
-    # b.vbar(x=dodge('hour', +0.25, range=b.x_range), top='Overall', width=0.2, source=source,color="#718dbf", legend=value("Overall"))
-
-    # p.vbar(x=dodge('hour',  0.0,  range=p.x_range), top='Selection', width=0.2, source=source, color="#e84d60", legend=value("Selection"))
-
     b.x_range.range_padding = 0.1
     b.xgrid.grid_line_color = None
     b.legend.location = "top_center"
@@ -424,8 +420,6 @@ def create_chart():
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def update(attr, old, new):
     print(attr, "**", old, "**", new)
-    # layout.children[1].children[0] = create_map()
-    # layout.children[2] = create_chart()
     layout.children[0].children[0] = create_map()
     layout.children[1].children[0] = create_chart()
 
@@ -470,7 +464,8 @@ category.on_change('value', update)
 time_control = widgetbox([days_options, slider], width=400)
 position_control = widgetbox([zoom, lat, lon], width=140)
 select_box = widgetbox(neighborhood, ambience, alcohol, category)
-layout = column(row(create_map(), column(position_control, time_control)), row(create_chart(), select_box))
+layout = column(row(create_map(), column(position_control, time_control)),
+                row(create_chart(), select_box))
 # layout = column(row(time_control,position_control),row(create_map(),select_box),create_chart())
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
