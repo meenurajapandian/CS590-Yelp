@@ -4,10 +4,11 @@ import networkx as nx
 import numpy as np
 from bokeh.plotting import curdoc, figure, gmap
 from bokeh.layouts import widgetbox, row, column, Spacer
-from bokeh.models import ColumnDataSource, GraphRenderer, GMapOptions, Circle, MultiLine, StaticLayoutProvider, TapTool, HoverTool
+from bokeh.models import ColumnDataSource, GraphRenderer, GMapOptions, Circle, MultiLine, StaticLayoutProvider, TapTool, HoverTool, Legend
 from bokeh.models.widgets import RadioGroup, RadioButtonGroup, Paragraph, Select, Slider
 from bokeh.models.graphs import NodesAndLinkedEdges, EdgesAndLinkedNodes
-from bokeh.palettes import RdBu7 as Color_Palette
+#from bokeh.palettes import RdBu7 as Color_Palette
+from bokeh.palettes import YlOrRd
 from bokeh.transform import dodge
 from bokeh.core.properties import value
 
@@ -19,9 +20,9 @@ G = nx.read_gml("user.gml")
 
 df = pd.read_csv("nevada_business_cleaned_200.csv")
 df.drop(columns=['hours.Monday', 'hours.Tuesday', 'hours.Wednesday', 'hours.Thursday', 'hours.Friday', 'hours.Saturday',
-                 'hours.Sunday'
-    , 'time', 'BusinessAcceptsBitcoin', 'CoatCheck', 'DogsAllowed', 'city', 'postal_code', 'address', 'attributes'],
-        inplace=True)
+                 'hours.Sunday', 'time', 'BusinessAcceptsBitcoin', 'CoatCheck', 'DogsAllowed', 'city', 'postal_code', 'address', 'attributes'],
+                 inplace=True)
+
 # Converting checkin time text data to dictonary
 s = df['checkins'].tolist()
 dictonary = []
@@ -30,6 +31,7 @@ for t in s:
     d = json.loads(json_acceptable_string)
     dictonary.append(d)
 df['checkins'] = pd.DataFrame({'col': dictonary})
+
 # Converting ambience time text data to dictonary
 s = df['Ambience'].tolist()
 dictonary = []
@@ -48,6 +50,7 @@ for x in df['stars']:
     y = x * 2
     doubled_stars.append(y)
 df['stars'] = doubled_stars
+
 #####SETTING DEFAULTS FOR SELECTION FLAGS
 default_flag = []
 l = len(df['business_id'])
@@ -200,7 +203,7 @@ def selection_1(neighborhood):
             disp.append(s)
     return disp
 
-
+# Simple Ambience Selection
 def selection_2(ambience):
     s2 = ambience
     disp = []
@@ -222,7 +225,7 @@ def selection_2(ambience):
             disp.append(s)
     return disp
 
-
+# Alcohol type selection
 def selection_3(alcohol):
     s3 = alcohol
     disp = []
@@ -244,7 +247,7 @@ def selection_3(alcohol):
             disp.append(s)
     return disp
 
-
+# Establishment Type
 def selection_4(category):
     s4 = category
     disp = []
@@ -322,13 +325,14 @@ def sizes(checking_at_hour, z):
 
 # Function to assign color based on manual observation of checkin bins
 def colors(flag_5):
+    Color_Palette = YlOrRd[8]
     f_5 = flag_5
     clr = []
     for i in f_5:
         if (i == 0):
-            clr.append(Color_Palette[0])
+            clr.append(Color_Palette[4])
         else:
-            clr.append("red")
+            clr.append(Color_Palette[1])
     return clr
 
 
@@ -390,7 +394,7 @@ def create_map():
         tooltips=[('Business Name', '@name'), ('Reviews', '@review_count'), ('Checkins', '@checkin_at_hr')],
         names=["bus_hover"])
 
-    p = gmap("AIzaSyBZ66UcTIUAyZBWhrhs8JLTzth9yMorgQU", map_options, title="Vegas businesses", plot_width=550, plot_height=550,
+    p = gmap("AIzaSyAQBImT1FpLK1aQvKq1e-Cfs1xd_NzC0mY", map_options, title="Vegas businesses", plot_width=550, plot_height=550,
              tools=[bus_hover, 'reset', 'pan', 'lasso_select'], toolbar_location="above")
 
     source = ColumnDataSource(data=dict(lat=df['latitude'], lon=df['longitude'], size=sz, color=clr, alpha=alp,
@@ -399,38 +403,63 @@ def create_map():
 
     p.circle(x="lon", y="lat", size="size", fill_alpha="alpha", fill_color="color", name="bus_hover", line_width=1,
              line_alpha=0, hover_alpha=1.0, source=source)
+    p.outline_line_alpha = 0
+    p.xgrid.grid_line_color = None
+    p.ygrid.grid_line_color = None
+    p.xaxis.visible = False
+    p.yaxis.visible = False
 
     return p
 
 
 # Creating the check in chart
 def create_chart():
+    Color_Palette = YlOrRd[8]
     hour = list(range(0, 24))
     hour_str = []
     for x in hour:
-        hour_str.append(str(x))
+        hour_str.append(str(x)+":00")
 
     avg_type = ['Overall', 'Selection']
     day = mapping_day(days_options.active)
     overall = average_checkins(day)
     selection = selection_avg_checkins(day, df['flag_5'])
+
+    hour_str.reverse()
+    overall.reverse()
+    selection.reverse()
     data = {'hour': hour_str,
             'Overall': overall, 'Selection': selection}
 
     source = ColumnDataSource(data=data)
 
-    b = figure(x_range=hour_str, title="Checkin Counts Comparison", x_axis_label='Hour of Day',
-               y_axis_label="Average Checkins", toolbar_location=None, tools="", plot_width=500, plot_height=250)
-    b.vbar(x=dodge('hour', -0.225, range=b.x_range), top='Overall', width=0.35, source=source,
-           color="blue", legend=value("Overall"))
+    # b = figure(x_range=hour_str, title="Checkin Counts Comparison", x_axis_label='Hour of Day',
+    #            y_axis_label="Average Checkins", toolbar_location=None, tools="", plot_width=500, plot_height=250)
+    # b.vbar(x=dodge('hour', -0.225, range=b.x_range), top='Overall', width=0.35, source=source,
+    #        color="blue", legend=value("Overall"))
+    #
+    # b.vbar(x=dodge('hour', +0.225, range=b.x_range), top='Selection', width=0.35, source=source, color="red",
+    #        legend=value("Selection"))
 
-    b.vbar(x=dodge('hour', +0.225, range=b.x_range), top='Selection', width=0.35, source=source, color="red",
+    b = figure(y_range=hour_str, x_range=(0, 62), title="Checkin Counts Comparison", y_axis_label='Hour of Day',
+               x_axis_label="Average Checkins", toolbar_location=None, tools="", plot_width=290, plot_height=550)
+    b.hbar(y=dodge('hour', -0.22, range=b.y_range), right='Overall', height=0.35, source=source,
+           color=Color_Palette[4], legend=value("Overall"))
+
+    b.hbar(y=dodge('hour', +0.22, range=b.y_range), right='Selection', height=0.35, source=source, color=Color_Palette[1],
            legend=value("Selection"))
 
-    b.x_range.range_padding = 0.1
-    b.xgrid.grid_line_color = None
-    b.legend.location = "top_center"
-    b.legend.orientation = "horizontal"
+    b.outline_line_alpha = 0
+    b.legend.location = "center_right"
+    b.legend.orientation = "vertical"
+    b.yaxis.axis_line_color = None
+    b.yaxis.major_tick_line_color = None
+    b.yaxis.major_tick_out = 0
+    b.ygrid.grid_line_color = None
+    b.xaxis.axis_line_color = None
+    b.xaxis.minor_tick_line_color = None
+    b.xaxis.major_tick_line_alpha = 0.4
+
     return b
 
 
@@ -491,7 +520,7 @@ def create_graph():
 
 def update1(attr, old, new):
     layout.children[0].children[0] = create_map()
-    layout.children[1].children[0] = create_chart()
+    layout.children[0].children[1] = create_chart()
 
 
 def update2(attr, old, new):
@@ -534,7 +563,7 @@ category = Select(title='Establishment Type', value='All', options=['All'] + cat
 category.on_change('value', update1)
 
 
-#Radio buttons for changing layouts and colors
+# Radio buttons for changing layouts and colors
 radio_layout = RadioGroup(
         labels=["Degree", "Betweenness", "Communicability"], active=0)
 radio_layout.on_change('active', update2)
@@ -546,17 +575,27 @@ radio_color.on_change('active', update2)
 t1 = Paragraph(text="""User Layout""")
 t2 = Paragraph(text="""User Color Scheme""")
 
-user_control = widgetbox([t1, radio_layout, t2, radio_color], width=170)
-time_control = widgetbox([days_options, slider], width=270)
-position_control = widgetbox([zoom, lat, lon], width=140)
-select_box = widgetbox(neighborhood, ambience, alcohol, category, width=300)
+# Arrangement
 
-layout = column(row(create_map(),
-                    Spacer(width=20),
-                    column(position_control, time_control, Spacer(height=50), row(Spacer(width=130), user_control)),
-                    create_graph()),
-                row(create_chart(), select_box))
+# user_control = widgetbox([t1, radio_layout, t2, radio_color], width=170)
+# time_control = widgetbox([days_options, slider], width=270)
+# position_control = widgetbox([zoom, lat, lon], width=140)
+# select_box = widgetbox(neighborhood, ambience, alcohol, category, width=150)
 
+user_control = row(widgetbox([t1, radio_layout], width=170), widgetbox([t2, radio_color], width=170))
+time_control = row(widgetbox([Paragraph(text="""Day of Week"""),days_options], width=270), widgetbox(slider, width=270))
+position_control = row(widgetbox(zoom, width=170), widgetbox(lat, width=180), widgetbox(lon, width=180))
+select_box = row(widgetbox(neighborhood, ambience, width=150), widgetbox(category, alcohol, width=150))
+
+# layout = column(row(create_map(),
+#                     Spacer(width=20),
+#                     column(position_control, time_control, Spacer(height=50), row(Spacer(width=130), user_control)),
+#                     create_graph()),
+#                 row(create_chart(), select_box))
+
+
+layout = column(row(create_map(),create_chart(),Spacer(width=20),create_graph()),
+                row(column(position_control, Spacer(height=10), time_control), Spacer(width=30), select_box, Spacer(width=20), user_control))
 
 curdoc().add_root(layout)
 curdoc().title = "Vegas Yelp - Businesses & Users"
