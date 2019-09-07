@@ -394,7 +394,7 @@ def create_map():
         tooltips=[('Business Name', '@name'), ('Reviews', '@review_count'), ('Checkins', '@checkin_at_hr')],
         names=["bus_hover"])
 
-    p = gmap("AIzaSyAQBImT1FpLK1aQvKq1e-Cfs1xd_NzC0mY", map_options, title="Vegas businesses", plot_width=550, plot_height=550,
+    p = gmap("api-key", map_options, title="Vegas businesses", plot_width=550, plot_height=550,
              tools=[bus_hover, 'reset', 'pan', 'lasso_select'], toolbar_location="above")
 
     source = ColumnDataSource(data=dict(lat=df['latitude'], lon=df['longitude'], size=sz, color=clr, alpha=alp,
