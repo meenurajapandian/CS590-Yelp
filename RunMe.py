@@ -4,13 +4,13 @@ import networkx as nx
 import numpy as np
 from bokeh.plotting import curdoc, figure, gmap
 from bokeh.layouts import widgetbox, row, column, Spacer
-from bokeh.models import ColumnDataSource, GraphRenderer, GMapOptions, Circle, MultiLine, StaticLayoutProvider, TapTool, HoverTool, Legend
+from bokeh.models import ColumnDataSource, GraphRenderer, GMapOptions, Circle, MultiLine, StaticLayoutProvider, TapTool, HoverTool, Legend, LabelSet
 from bokeh.models.widgets import RadioGroup, RadioButtonGroup, Paragraph, Select, Slider
 from bokeh.models.graphs import NodesAndLinkedEdges, EdgesAndLinkedNodes
-#from bokeh.palettes import RdBu7 as Color_Palette
 from bokeh.palettes import YlOrRd
 from bokeh.transform import dodge
 from bokeh.core.properties import value
+from bokeh.models.callbacks import CustomJS
 
 
 # Reading the user network
@@ -18,7 +18,7 @@ G = nx.read_gml("user.gml")
 
 # Preprocessing and cleaning businesses file
 
-df = pd.read_csv("nevada_business_cleaned_200.csv")
+df = pd.read_csv("nevada_business.csv")
 df.drop(columns=['hours.Monday', 'hours.Tuesday', 'hours.Wednesday', 'hours.Thursday', 'hours.Friday', 'hours.Saturday',
                  'hours.Sunday', 'time', 'BusinessAcceptsBitcoin', 'CoatCheck', 'DogsAllowed', 'city', 'postal_code', 'address', 'attributes'],
                  inplace=True)
@@ -51,7 +51,7 @@ for x in df['stars']:
     doubled_stars.append(y)
 df['stars'] = doubled_stars
 
-#####SETTING DEFAULTS FOR SELECTION FLAGS
+# SETTING DEFAULTS FOR SELECTION FLAGS
 default_flag = []
 l = len(df['business_id'])
 for i in range(1, l):
@@ -349,11 +349,13 @@ def alpha(flag_5):
 
 # Creating the ColumnDataSource for nodes of the graph
 def nodes_df(gr, col):
-    node_data = dict(index=[], Col=[], size=[])
+    node_data = dict(index=[], Col=[], size=[], rate=[])
     for u in gr.nodes():
         node_data['index'].append(u)
         node_data['Col'].append(gr.node[u][col])
         node_data['size'].append(gr.node[u]['size'])
+        # node_data['rate'].append(gr.node[u]['rate'])
+        node_data['rate'].append([1,2,3,4])
     return node_data
 
 
@@ -380,7 +382,6 @@ def create_map():
     df['checkin_at_hour'] = checkin_at_hour(day, hour)  # adds column df['checkin_at_hour'] for use in size calculation
 
     sz = sizes(df['checkin_at_hour'], z)
-    print(sz[:20])
     df['flag_1'] = selection_1(neighborhood.value)
     df['flag_2'] = selection_2(ambience.value)
     df['flag_3'] = selection_3(alcohol.value)
@@ -433,14 +434,6 @@ def create_chart():
 
     source = ColumnDataSource(data=data)
 
-    # b = figure(x_range=hour_str, title="Checkin Counts Comparison", x_axis_label='Hour of Day',
-    #            y_axis_label="Average Checkins", toolbar_location=None, tools="", plot_width=500, plot_height=250)
-    # b.vbar(x=dodge('hour', -0.225, range=b.x_range), top='Overall', width=0.35, source=source,
-    #        color="blue", legend=value("Overall"))
-    #
-    # b.vbar(x=dodge('hour', +0.225, range=b.x_range), top='Selection', width=0.35, source=source, color="red",
-    #        legend=value("Selection"))
-
     b = figure(y_range=hour_str, x_range=(0, 62), title="Checkin Counts Comparison", y_axis_label='Hour of Day',
                x_axis_label="Average Checkins", toolbar_location=None, tools="", plot_width=290, plot_height=550)
     b.hbar(y=dodge('hour', -0.22, range=b.y_range), right='Overall', height=0.35, source=source,
@@ -458,7 +451,7 @@ def create_chart():
     b.ygrid.grid_line_color = None
     b.xaxis.axis_line_color = None
     b.xaxis.minor_tick_line_color = None
-    b.xaxis.major_tick_line_alpha = 0.4
+    b.xaxis.major_tick_line_color = "#a7a7a7"
 
     return b
 
@@ -490,7 +483,7 @@ def create_graph():
     graph.node_renderer.data_source.data = nodes_df(G, col)
     graph.edge_renderer.data_source.data = edges_df(G)
     graph.node_renderer.glyph = Circle(size='size', fill_color='Col', line_color="black", line_alpha = 0.1, fill_alpha=1)
-    graph.edge_renderer.glyph = MultiLine(line_alpha='alpha', line_width=0.1, line_color="#A0DF3F")
+    graph.edge_renderer.glyph = MultiLine(line_alpha='alpha', line_width=0.1, line_color="#d8b7a4")
     graph_layout = dict(nx.get_node_attributes(G, lay))
     graph.layout_provider = StaticLayoutProvider(graph_layout=graph_layout)
 
@@ -500,6 +493,7 @@ def create_graph():
     graph.node_renderer.selection_glyph = Circle(size=12, fill_color='#0A5EB6', line_color="#002217")
     graph.edge_renderer.selection_glyph = MultiLine(line_color="#2972BE", line_width=0.5, line_alpha=0.4)
 
+
     # Adding graph to plot
     plot = figure(title="Yelp Users Layout", x_range=(-6.5, 6.5), y_range=(-6.5, 6.5), plot_width=525, plot_height=525,
                   toolbar_location="above")
@@ -508,10 +502,9 @@ def create_graph():
     plot.ygrid.grid_line_color = None
     plot.xaxis.visible = False
     plot.yaxis.visible = False
-    plot.renderers.append(graph)
-    plot.add_tools(TapTool())
+    plot.renderers.append(graph) # Adding graph
 
-    return plot
+    return row(plot)
 
 
 # ----------------------------------------------------------------------------------------------------------
@@ -595,7 +588,7 @@ select_box = row(widgetbox(neighborhood, ambience, width=150), widgetbox(categor
 
 
 layout = column(row(create_map(),create_chart(),Spacer(width=20),create_graph()),
-                row(column(position_control, Spacer(height=10), time_control), Spacer(width=30), select_box, Spacer(width=20), user_control))
+                row(column(position_control, Spacer(height=10), time_control), Spacer(width=30), select_box, Spacer(width=20), user_control))#, create_dummy_legend()))
 
 curdoc().add_root(layout)
 curdoc().title = "Vegas Yelp - Businesses & Users"
