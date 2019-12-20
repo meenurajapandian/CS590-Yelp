@@ -10,7 +10,6 @@ from bokeh.models.graphs import NodesAndLinkedEdges, EdgesAndLinkedNodes
 from bokeh.palettes import YlOrRd
 from bokeh.transform import dodge
 from bokeh.core.properties import value
-from bokeh.models.callbacks import CustomJS
 
 
 # Reading the user network
