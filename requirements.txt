@@ -1,6 +1,6 @@
 bokeh==1.4.0
 jsonschema==2.6.0
 networkx==2.2
-numpy==1.16.2
+numpy==1.22.0
 pandas==0.23.4
 
